@@ -20,24 +20,27 @@ public class Game {
 		Element teamAway = teams.get(0);
 		Element teamHome = teams.get(1);
 
-		teamAway.appendChild(this.extracLineScore(documento, teamAway.attr("url")));
-		teamHome.appendChild(this.extracLineScore(documento, teamHome.attr("url")));
+//		teamAway.appendChild(this.extracLineScore(documento, teamAway.attr("url")));
+//		teamHome.appendChild(this.extracLineScore(documento, teamHome.attr("url")));
 
-		teamAway.appendChild(this.extractBasicBoxScoreStats(documento, teamAway.attr("id")));
-		teamHome.appendChild(this.extractBasicBoxScoreStats(documento, teamHome.attr("id")));
+//		teamAway.appendChild(this.extractBasicBoxScoreStats(documento, teamAway.attr("id")));
+//		teamHome.appendChild(this.extractBasicBoxScoreStats(documento, teamHome.attr("id")));
 		
 		Element game = documento.createElement("game").appendChild(teamAway);
 		game.appendChild(teamHome);
 		
-		game.appendChild(this.extractPlayerInactive(documento));
+//		game.appendChild(this.extractPlayerInactive(documento));
+//		game.appendChild(this.extractOfficials(documento));
+//		game.appendChild(this.extractAttendance(documento));
+//		game.appendChild(this.extractTimeOfGame(documento));
 		
-		game.appendChild(this.extractOfficials(documento));
-		
-		game.appendChild(this.extractAttendance(documento));
-		
-		game.appendChild(this.extractTimeOfGame(documento));
+		game.attr("asistencia", this.extractAsistencia(documento));
 		
 		return game;
+	}
+	private String extractAsistencia(Document documento) {
+		Element attendanceElement = documento.select("div>div>div>div.scorebox_meta>div>small").first();
+		return attendanceElement.text().replaceAll(",", "");
 	}
 	public Element extractTimeOfGame(Document documento) {
 		Element TimeOfGame = documento.createElement("timeofgame");
@@ -243,31 +246,33 @@ public class Game {
 	}
 
 	public ArrayList<Element> extractData(Document documento) {
-		Elements scoreboxElements = documento.select("div.scorebox > div > div > strong > a");
+		Elements scoreboxElements = documento.select("div > div > div.scorebox > div > div[itemprop]");
 
 		Elements scoreElements = documento.select("div.scorebox > div > div.scores > div.score");
 
 		Elements scoreElementsDiv = documento.select("div.scorebox > div > div");
-
+		
+		Elements scoreboxElementsScore = documento.select("div > div > div.scorebox > div > div.scores > div.score");
+		
 		/* TEAM AWAY */
-		Element teamAway = documento.createElement("team").attr("name", scoreboxElements.get(0).text());
-		String urlTeamAway = scoreboxElements.get(0).attr("href");
-		teamAway.attr("url", urlTeamAway);
-		teamAway.attr("id", splitStringBySeparator(urlTeamAway, "/", 2));
-		teamAway.attr("score", scoreElements.get(0).text());
-		teamAway.attr("win_season", splitStringBySeparator(scoreElementsDiv.get(2).text(), "-", 0));
-		teamAway.attr("loss_season", splitStringBySeparator(scoreElementsDiv.get(2).text(), "-", 1));
-
-//		teamAway.appendChild(extracLineScore(documento, urlTeamAway));
+		Element teamAwayLogo = scoreboxElements.get(1).select("strong > a").first();
+		Element teamAwayPhoto = scoreboxElements.get(1).select("div > img").first();
+		Element teamAway = documento.createElement("team").attr("name", teamAwayLogo.text());
+		teamAway.attr("url", teamAwayLogo.attr("href"));
+		teamAway.attr("logo", teamAwayPhoto.attr("src"));
+		teamAway.attr("goal", scoreboxElementsScore.get(1).text());
+		teamAway.attr("idteam", this.idTeam(teamAwayPhoto.attr("src")));
+		
+		teamAway.appendChild(extractPlayer(documento, teamAway.attr("idteam")));
 
 		/* TEAM HOME */
-		Element teamHome = documento.createElement("team").attr("name", scoreboxElements.get(1).text());
-		String urlTeamHome = scoreboxElements.get(1).attr("href");
-		teamHome.attr("url", urlTeamHome);
-		teamHome.attr("id", splitStringBySeparator(urlTeamHome, "/", 2));
-		teamHome.attr("score", scoreElements.get(1).text());
-		teamHome.attr("win_season", splitStringBySeparator(scoreElementsDiv.get(6).text(), "-", 0));
-		teamHome.attr("loss_season", splitStringBySeparator(scoreElementsDiv.get(6).text(), "-", 1));
+		Element teamHomeLogo = scoreboxElements.get(0).select("strong > a").first();
+		Element teamHomePhoto = scoreboxElements.get(0).select("div > img").first();
+		Element teamHome = documento.createElement("team").attr("name", teamHomeLogo.text());
+		teamHome.attr("url", teamHomeLogo.attr("href"));
+		teamHome.attr("logo", teamHomePhoto.attr("src"));
+		teamHome.attr("goal", scoreboxElementsScore.get(0).text());
+		teamHome.attr("idteam", this.idTeam(teamHomePhoto.attr("src")));
 
 //		teamHome.appendChild(extracLineScore(documento, urlTeamHome));
 
@@ -317,6 +322,54 @@ public class Game {
 //		Elements tdArray = trArray.get(2).select("td");
 //		> div.overthrow.table_container > div.overthrow.table_container> table");
 		return lineScoreElement;
+	}
+	
+	private Element extractPlayer(Document documento, String idTeam) {
+		Element players = null;
+		players = documento.createElement("players");
+		
+		Elements playersListElement = documento.select("table#stats_"+ idTeam +"_summary>tbody>tr");
+		for (Element element : playersListElement) {
+			Element player = documento.createElement("player");
+			player.attr("name", element.select("th").first().text().trim().replaceAll("&nbsp;", ""));
+			player.attr("nationality", element.select("td[data-stat=nationality]>a>span").first().text());
+			player.attr("position", element.select("td[data-stat=position]").first().text());
+			player.attr("minutes", element.select("td[data-stat=minutes]").first().text());
+			
+			player.attr("goals", element.select("td[data-stat=goals]").first().text());
+			player.attr("assists", element.select("td[data-stat=assists]").first().text());
+			player.attr("pens_made", element.select("td[data-stat=pens_made]").first().text());
+			player.attr("pens_att", element.select("td[data-stat=pens_att]").first().text());
+			player.attr("shots_total", element.select("td[data-stat=shots_total]").first().text());
+			player.attr("shots_on_target", element.select("td[data-stat=shots_on_target]").first().text());
+			player.attr("cards_yellow", element.select("td[data-stat=cards_yellow]").first().text());
+			player.attr("cards_red", element.select("td[data-stat=cards_red]").first().text());
+			player.attr("touches", element.select("td[data-stat=touches]").first().text());
+			player.attr("pressures", element.select("td[data-stat=pressures]").first().text());
+			player.attr("tackles", element.select("td[data-stat=tackles]").first().text());
+			player.attr("interceptions", element.select("td[data-stat=interceptions]").first().text());
+			player.attr("blocks", element.select("td[data-stat=blocks]").first().text());
+			player.attr("xg", element.select("td[data-stat=xg]").first().text());
+			player.attr("npxg", element.select("td[data-stat=npxg]").first().text());
+			player.attr("xa", element.select("td[data-stat=xa]").first().text());
+			player.attr("sca", element.select("td[data-stat=sca]").first().text());
+			player.attr("gca", element.select("td[data-stat=gca]").first().text());
+			player.attr("passes_completed", element.select("td[data-stat=passes_completed]").first().text());
+			player.attr("passes", element.select("td[data-stat=passes]").first().text());
+			player.attr("passes_pct", element.select("td[data-stat=passes_pct]").first().text());
+			player.attr("passes_progressive_distance", element.select("td[data-stat=passes_progressive_distance]").first().text());
+			player.attr("carries", element.select("td[data-stat=carries]").first().text());
+			player.attr("carry_progressive_distance", element.select("td[data-stat=carry_progressive_distance]").first().text());
+			player.attr("dribbles_completed", element.select("td[data-stat=dribbles_completed]").first().text());
+			player.attr("dribbles", element.select("td[data-stat=dribbles]").first().text());
+			players.appendChild(player);
+		}
+		
+		return players;
+	}
+	private String idTeam(String strSrcLogo) {
+		String [] splitSrcLogo = strSrcLogo.split("/");
+		return splitSrcLogo[splitSrcLogo.length - 1].replaceAll(".png", "");
 	}
 
 }

@@ -26,7 +26,7 @@ public class scrapingFBRef2020 {
 	public static void main(String[] args) throws ParserConfigurationException, TransformerConfigurationException {
 		// TODO Auto-generated method stub
 
-		String urlBoxscores = "https://www.basketball-reference.com/boxscores/202001310BRK.html";
+		String urlBoxscores = "https://fbref.com/es/matches/82b4ca95/Girona-Valladolid-August-17-2018-La-Liga";
 		String urlPbp = "https://www.basketball-reference.com/pbp/202001310BRK.html";
 		Scrapeador scrap = new Scrapeador();
 		scrap.toXML(urlBoxscores);

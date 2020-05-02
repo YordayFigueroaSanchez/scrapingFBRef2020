@@ -37,7 +37,7 @@ public class Scrapeador {
 
 		Element jornadaElement = doc.createElement("matchday");
 		doc.appendChild(jornadaElement);
-		jornadaElement.attr("nro", "23");
+		jornadaElement.attr("nro", "01");
 
 		if (getStatusConnectionCode(pathRecurso) == 200) {
 			Document documento = getHtmlDocument(pathRecurso);
