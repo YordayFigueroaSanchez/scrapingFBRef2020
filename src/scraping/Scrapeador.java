@@ -8,6 +8,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 import org.jsoup.Jsoup;
@@ -23,7 +24,7 @@ public class Scrapeador {
 	}
 
 	@SuppressWarnings("unused")
-	public void toXML(String pathRecurso) {
+	public void toXML(String matchdayNro,String pathRecurso) {
 		String file = "jornada21.html";
 		File input = new File("data/" + file);
 
@@ -37,7 +38,7 @@ public class Scrapeador {
 
 		Element jornadaElement = doc.createElement("matchday");
 		doc.appendChild(jornadaElement);
-		jornadaElement.attr("nro", "01");
+		jornadaElement.attr("nro", matchdayNro);
 
 		if (getStatusConnectionCode(pathRecurso) == 200) {
 			Document documento = getHtmlDocument(pathRecurso);
@@ -47,6 +48,64 @@ public class Scrapeador {
 //			game.extracLineScore(documento);
 			//jornadaElement.attr("nro_scorebox", String.valueOf(scoreboxElements.size()));
 		}
+
+		// nombre del fichero
+		Date fecha = new Date();
+		DateFormat hourdateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss");
+		System.out.println("Hora y fecha: " + hourdateFormat.format(fecha));
+		String nombreFichero = hourdateFormat.format(fecha);
+		String ruta = "dataXML\\";
+
+		BufferedWriter writer = null;
+		try {
+			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(ruta + nombreFichero + ".xml"),
+					StandardCharsets.UTF_8));
+			writer.write(jornadaElement.outerHtml());
+
+		} catch (IOException e) {
+			System.out.println("error");
+		} finally {
+			try {
+				if (writer != null) {
+					writer.close();
+				}
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		System.out.println("File saved!");
+	}
+
+	
+	@SuppressWarnings("unused")
+	public void toXML(String matchdayNro,ArrayList<String> pathRecurso) {
+		String file = "jornada21.html";
+		File input = new File("data/" + file);
+
+		Document doc = null;
+		try {
+			doc = Jsoup.parse(input, "UTF-8", "http://example.com/");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		Element jornadaElement = doc.createElement("matchday");
+		doc.appendChild(jornadaElement);
+		jornadaElement.attr("nro", matchdayNro);
+
+		for (String pathUrl : pathRecurso) {
+			if (getStatusConnectionCode(pathUrl) == 200) {
+				Document documento = getHtmlDocument(pathUrl);
+				
+				Game game = new Game();
+				jornadaElement.appendChild(game.extractGame(documento));
+			}
+		}
+		
 
 		// nombre del fichero
 		Date fecha = new Date();
