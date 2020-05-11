@@ -41,6 +41,7 @@ public class Scrapeador {
 		jornadaElement.attr("nro", matchdayNro);
 
 		if (getStatusConnectionCode(pathRecurso) == 200) {
+			System.out.println(pathRecurso);
 			Document documento = getHtmlDocument(pathRecurso);
 			
 			Game game = new Game();
@@ -98,6 +99,7 @@ public class Scrapeador {
 		jornadaElement.attr("nro", matchdayNro);
 
 		for (String pathUrl : pathRecurso) {
+			System.out.println(pathUrl);
 			if (getStatusConnectionCode(pathUrl) == 200) {
 				Document documento = getHtmlDocument(pathUrl);
 				

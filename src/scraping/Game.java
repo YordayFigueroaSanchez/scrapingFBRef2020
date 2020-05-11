@@ -19,28 +19,90 @@ public class Game {
 		ArrayList<Element> teams = this.extractData(documento);
 		Element teamAway = teams.get(0);
 		Element teamHome = teams.get(1);
-
-//		teamAway.appendChild(this.extracLineScore(documento, teamAway.attr("url")));
-//		teamHome.appendChild(this.extracLineScore(documento, teamHome.attr("url")));
-
-//		teamAway.appendChild(this.extractBasicBoxScoreStats(documento, teamAway.attr("id")));
-//		teamHome.appendChild(this.extractBasicBoxScoreStats(documento, teamHome.attr("id")));
+		
+		for (Element elementTeamAway : this.extractSummary(documento, "a")) {
+			teamAway.appendChild(elementTeamAway);
+		}
+		for (Element elementTeamHome : this.extractSummary(documento, "b")) {
+			teamHome.appendChild(elementTeamHome);
+		}
 		
 		Element game = documento.createElement("game").appendChild(teamAway);
 		game.appendChild(teamHome);
 		
-//		game.appendChild(this.extractPlayerInactive(documento));
-//		game.appendChild(this.extractOfficials(documento));
-//		game.appendChild(this.extractAttendance(documento));
-//		game.appendChild(this.extractTimeOfGame(documento));
-		
 		game.attr("asistencia", this.extractAsistencia(documento));
+		game.attr("datetime", this.extractFecha(documento));
+		game.attr("datetimeepoch", this.extractFechaEpoch(documento));
+		
+		this.extractSummary(documento, "a");
+		this.extractSummary(documento, "b");
 		
 		return game;
+	}
+	private ArrayList<Element> extractSummary(Document documento, String typeTeam) {
+		ArrayList<Element> arrSummary = new ArrayList<Element>();
+		Element matchSummary = documento.select("div#events_wrap").first();
+		Elements teamSummaryGoal = matchSummary.select("div.event." + typeTeam + ">div>div.event_icon.goal");
+		Element goals = documento.createElement("goals");
+		for (Element elementGoal : teamSummaryGoal) {
+			Element goal = documento.createElement("goal");
+			goal.attr("anota_player_name", 	elementGoal.parent().select("div>div>a").first().text());
+			goal.attr("anota_player_id", 	this.idPlayer(elementGoal.parent().select("div>div>a").first().attr("href")));
+			goal.attr("asiste_player_name", elementGoal.parent().select("div>small>a").first().text());
+			goal.attr("asiste_player_id", 	this.idPlayer(elementGoal.parent().select("div>small>a").first().attr("href")));
+			String minutoAgregado = elementGoal.parent().parent().select("div").get(1).ownText().replaceAll("\u00a0","").replaceAll("’", "");
+			if (minutoAgregado.contains("+")) {
+				String [] arrMinutoAgregado = minutoAgregado.split("+");
+				goal.attr("minute", arrMinutoAgregado[0].trim());
+				goal.attr("agregado", arrMinutoAgregado[1].trim());
+			} else {
+				goal.attr("minute", minutoAgregado.trim());
+			}
+			String scoreCompleto = elementGoal.parent().parent().select("div>small>span").first().ownText().trim();
+			String [] arrScoreCompleto = scoreCompleto.split(":");
+			goal.attr("goalFavor", arrScoreCompleto[0]);
+			goal.attr("goalContra", arrScoreCompleto[1]);
+			goals.appendChild(goal);
+		}
+		arrSummary.add(goals);
+		System.out.println("goal "+teamSummaryGoal.size());
+		
+		Elements teamSummaryOwnGoal = matchSummary.select("div.event." + typeTeam + ">div>div.event_icon.own_goal");
+		Element own_goal = documento.createElement("own_goal");
+		arrSummary.add(own_goal);
+		System.out.println("ownGoal "+teamSummaryOwnGoal.size());
+		
+		Elements teamSummaryYellowCard = matchSummary.select("div.event." + typeTeam + ">div>div.event_icon.yellow_card");
+		Element yellow_card = documento.createElement("yellow_card");
+		arrSummary.add(yellow_card);
+		System.out.println("yellow "+teamSummaryYellowCard.size());
+		
+		Elements teamSummarySubtituteIn = matchSummary.select("div.event." + typeTeam + ">div>div.event_icon.substitute_in");
+		Element substitute_in = documento.createElement("substitute_in");
+		arrSummary.add(substitute_in);
+		System.out.println("subtitute "+teamSummarySubtituteIn.size());
+		
+		Elements teamSummaryPenaltyGoal = matchSummary.select("div.event." + typeTeam + ">div>div.event_icon.penalty_goal");
+		Element penalty_goal = documento.createElement("penalty_goal");
+		arrSummary.add(penalty_goal);
+		System.out.println("penal "+teamSummaryPenaltyGoal.size());
+		
+		return arrSummary;
 	}
 	private String extractAsistencia(Document documento) {
 		Element attendanceElement = documento.select("div>div>div>div.scorebox_meta>div>small").first();
 		return attendanceElement.text().replaceAll(",", "");
+	}
+	private String extractFecha(Document documento) {
+		Element datetimeElement = documento.select("span.venuetime").first();
+		String strDate = datetimeElement.attr("data-venue-date");
+		String strTime = datetimeElement.attr("data-venue-time");
+		return strDate + " " + strTime;
+	}
+	private String extractFechaEpoch(Document documento) {
+		Element datetimeElement = documento.select("span.venuetime").first();
+		String strEpoch = datetimeElement.attr("data-venue-epoch");
+		return strEpoch;
 	}
 	public Element extractTimeOfGame(Document documento) {
 		Element TimeOfGame = documento.createElement("timeofgame");
@@ -339,6 +401,7 @@ public class Game {
 //			System.out.println(strPlayer);
 			player.attr("player_name", 					element.select("th>a").first().text().trim());
 			player.attr("player_url", 					element.select("th>a").first().attr("href").trim());
+			player.attr("player_id", 					this.idPlayer(element.select("th>a").first().attr("href").trim()));
 			player.attr("nationality", 					element.select("td[data-stat=nationality]>a>span").first().text().split(" ")[1]);
 			player.attr("position", 					element.select("td[data-stat=position]").first().text());
 			player.attr("minutes", 						element.select("td[data-stat=minutes]").first().text());
@@ -380,30 +443,31 @@ public class Game {
 		Elements playersListElement = documento.select("table#keeper_stats_"+ idTeam +">tbody>tr");
 		for (Element element : playersListElement) {
 			Element player = documento.createElement("player");
-			player.attr("player_name", 					element.select("th>a").first().text().trim());
-			player.attr("player_url", 					element.select("th>a").first().attr("href").trim());
-			player.attr("nationality", 					element.select("td[data-stat=nationality]>a>span").first().text().split(" ")[1]);
-			player.attr("position", 					"GK");
-			player.attr("shots_on_target_against", 		element.select("td[data-stat=shots_on_target_against]").first().text());
-			player.attr("goals_against", 				element.select("td[data-stat=goals_against]").first().text());
-			player.attr("saves", 						element.select("td[data-stat=saves]").first().text());
-			player.attr("save_perc", 					element.select("td[data-stat=save_perc]").first().text());
-			player.attr("psxg_gk", 						element.select("td[data-stat=psxg_gk]").first().text());
-			player.attr("passes_completed_launched_gk", element.select("td[data-stat=passes_completed_launched_gk]").first().text());
-			player.attr("passes_launched_gk", 			element.select("td[data-stat=passes_launched_gk]").first().text());
-			player.attr("passes_pct_launched_gk", 		element.select("td[data-stat=passes_pct_launched_gk]").first().text());
-			player.attr("passes_gk", 					element.select("td[data-stat=passes_gk]").first().text());
-			player.attr("passes_throws_gk", 			element.select("td[data-stat=passes_throws_gk]").first().text());
-			player.attr("pct_passes_launched_gk", 		element.select("td[data-stat=pct_passes_launched_gk]").first().text());
-			player.attr("passes_length_avg_gk", 		element.select("td[data-stat=passes_length_avg_gk]").first().text());
-			player.attr("goal_kicks", 					element.select("td[data-stat=goal_kicks]").first().text());
-			player.attr("pct_goal_kicks_launched", 		element.select("td[data-stat=pct_goal_kicks_launched]").first().text());
-			player.attr("goal_kick_length_avg", 		element.select("td[data-stat=goal_kick_length_avg]").first().text());
-			player.attr("crosses_gk", 					element.select("td[data-stat=crosses_gk]").first().text());
-			player.attr("crosses_stopped_gk", 			element.select("td[data-stat=crosses_stopped_gk]").first().text());
-			player.attr("crosses_stopped_pct_gk", 		element.select("td[data-stat=crosses_stopped_pct_gk]").first().text());
+			player.attr("player_name", 						element.select("th>a").first().text().trim());
+			player.attr("player_url", 						element.select("th>a").first().attr("href").trim());
+			player.attr("player_id", 						this.idPlayer(element.select("th>a").first().attr("href").trim()));
+			player.attr("nationality", 						element.select("td[data-stat=nationality]>a>span").first().text().split(" ")[1]);
+			player.attr("position", 						"GK");
+			player.attr("shots_on_target_against", 			element.select("td[data-stat=shots_on_target_against]").first().text());
+			player.attr("goals_against_gk", 				element.select("td[data-stat=goals_against_gk]").first().text());
+			player.attr("saves", 							element.select("td[data-stat=saves]").first().text());
+			player.attr("save_perc", 						element.select("td[data-stat=save_perc]").first().text());
+			player.attr("psxg_gk", 							element.select("td[data-stat=psxg_gk]").first().text());
+			player.attr("passes_completed_launched_gk", 	element.select("td[data-stat=passes_completed_launched_gk]").first().text());
+			player.attr("passes_launched_gk", 				element.select("td[data-stat=passes_launched_gk]").first().text());
+			player.attr("passes_pct_launched_gk", 			element.select("td[data-stat=passes_pct_launched_gk]").first().text());
+			player.attr("passes_gk", 						element.select("td[data-stat=passes_gk]").first().text());
+			player.attr("passes_throws_gk", 				element.select("td[data-stat=passes_throws_gk]").first().text());
+			player.attr("pct_passes_launched_gk", 			element.select("td[data-stat=pct_passes_launched_gk]").first().text());
+			player.attr("passes_length_avg_gk", 			element.select("td[data-stat=passes_length_avg_gk]").first().text());
+			player.attr("goal_kicks", 						element.select("td[data-stat=goal_kicks]").first().text());
+			player.attr("pct_goal_kicks_launched", 			element.select("td[data-stat=pct_goal_kicks_launched]").first().text());
+			player.attr("goal_kick_length_avg", 			element.select("td[data-stat=goal_kick_length_avg]").first().text());
+			player.attr("crosses_gk", 						element.select("td[data-stat=crosses_gk]").first().text());
+			player.attr("crosses_stopped_gk", 				element.select("td[data-stat=crosses_stopped_gk]").first().text());
+			player.attr("crosses_stopped_pct_gk", 			element.select("td[data-stat=crosses_stopped_pct_gk]").first().text());
 			player.attr("def_actions_outside_pen_area_gk",	element.select("td[data-stat=def_actions_outside_pen_area_gk]").first().text());
-			player.attr("avg_distance_def_actions_gk", 	element.select("td[data-stat=avg_distance_def_actions_gk]").first().text());
+			player.attr("avg_distance_def_actions_gk", 		element.select("td[data-stat=avg_distance_def_actions_gk]").first().text());
 			players.appendChild(player);
 		}
 		
@@ -412,6 +476,10 @@ public class Game {
 	private String idTeam(String strSrcLogo) {
 		String [] splitSrcLogo = strSrcLogo.split("/");
 		return splitSrcLogo[splitSrcLogo.length - 1].replaceAll(".png", "");
+	}
+	private String idPlayer(String strUrlHref) {
+		String[] arrStrUrlHref = strUrlHref.split("/");
+		return arrStrUrlHref[3];
 	}
 
 }

@@ -54,14 +54,26 @@ public class scrapingFBRef2020 {
 						"https://fbref.com/en/matches/37c34100/Levante-Celta-Vigo-August-27-2018-La-Liga",
 						"https://fbref.com/en/matches/0d234b90/Athletic-Bilbao-Huesca-August-27-2018-La-Liga")
 				);
-		
-		String urlBoxscores = "https://fbref.com/es/matches/82b4ca95/Girona-Valladolid-August-17-2018-La-Liga";
+		ArrayList<String> arrayUrlBoxScoreJornada03 = new ArrayList<String>(
+				Arrays.asList(
+						"https://fbref.com/en/matches/3505425b/Getafe-Valladolid-August-31-2018-La-Liga",
+						"https://fbref.com/en/matches/e9a96548/Eibar-Real-Sociedad-August-31-2018-La-Liga",
+						"https://fbref.com/en/matches/d376ad57/Villarreal-Girona-August-31-2018-La-Liga",
+						"https://fbref.com/en/matches/612c7914/Celta-Vigo-Atletico-Madrid-September-1-2018-La-Liga",
+						"https://fbref.com/en/matches/273a53fc/Real-Madrid-Leganes-September-1-2018-La-Liga",
+						"https://fbref.com/en/matches/8b8f19c0/Levante-Valencia-September-2-2018-La-Liga",
+						"https://fbref.com/en/matches/efc2a670/Alaves-Espanyol-September-2-2018-La-Liga",
+						"https://fbref.com/en/matches/0b6d40c5/Barcelona-Huesca-September-2-2018-La-Liga",
+						"https://fbref.com/en/matches/386b9a82/Real-Betis-Sevilla-September-2-2018-La-Liga")
+				);
+		String urlBoxscores = "https://fbref.com/en/matches/0b6d40c5/Barcelona-Huesca-September-2-2018-La-Liga";
 		String urlPbp = "https://www.basketball-reference.com/pbp/202001310BRK.html";
 		Scrapeador scrap = new Scrapeador();
 		
-//		scrap.toXML("01", urlBoxscores);
+		scrap.toXML("01", urlBoxscores);
 //		scrap.toXML("01", arrayUrlBoxScoreJornada01);
-		scrap.toXML("02", arrayUrlBoxScoreJornada02);
+//		scrap.toXML("02", arrayUrlBoxScoreJornada02);
+//		scrap.toXML("03", arrayUrlBoxScoreJornada03);
 
 	}
 }
