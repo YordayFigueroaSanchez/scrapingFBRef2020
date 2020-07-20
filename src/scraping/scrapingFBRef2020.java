@@ -70,10 +70,10 @@ public class scrapingFBRef2020 {
 		String urlPbp = "https://www.basketball-reference.com/pbp/202001310BRK.html";
 		Scrapeador scrap = new Scrapeador();
 		
-		scrap.toXML("01", urlBoxscores);
+//		scrap.toXML("01", urlBoxscores);
 //		scrap.toXML("01", arrayUrlBoxScoreJornada01);
 //		scrap.toXML("02", arrayUrlBoxScoreJornada02);
-//		scrap.toXML("03", arrayUrlBoxScoreJornada03);
+		scrap.toXML("03", arrayUrlBoxScoreJornada03);
 
 	}
 }
